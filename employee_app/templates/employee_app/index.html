@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Management</title>
+    <script>
+        function getEmployees() {
+            fetch('/api/employees/')
+                .then(response => response.json())
+                .then(data => {
+                    const employeeTable = document.getElementById('employeeTable');
+                    employeeTable.innerHTML = '<tr><th>ID</th><th>Name</th><th>Email</th><th>Salary</th><th>Address</th><th>Actions</th></tr>';
+                    data.forEach(employee => {
+                        const row = `<tr>
+                                        <td>${employee.id}</td>
+                                        <td>${employee.name}</td>
+                                        <td>${employee.email}</td>
+                                        <td>${employee.salary}</td>
+                                        <td>${employee.address}</td>
+                                        <td>
+                                            <button onclick="editEmployee(${employee.id}, '${employee.name}', '${employee.email}', ${employee.salary}, '${employee.address}')">Edit</button>
+                                            <button onclick="deleteEmployee(${employee.id})">Delete</button>
+                                        </td>
+                                    </tr>`;
+                        employeeTable.innerHTML += row;
+                    });
+                });
+        }
+
+        function addEmployee() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const salary = document.getElementById('salary').value;
+            const address = document.getElementById('address').value;
+            fetch('/api/employees/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({name: name, email: email, salary: salary, address: address})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                getEmployees();
+            });
+        }
+
+        function editEmployee(id, name, email, salary, address) {
+            document.getElementById('updateId').value = id;
+            document.getElementById('updateName').value = name;
+            document.getElementById('updateEmail').value = email;
+            document.getElementById('updateSalary').value = salary;
+            document.getElementById('updateAddress').value = address;
+        }
+
+        function updateEmployee() {
+            const id = document.getElementById('updateId').value;
+            const name = document.getElementById('updateName').value;
+            const email = document.getElementById('updateEmail').value;
+            const salary = document.getElementById('updateSalary').value;
+            const address = document.getElementById('updateAddress').value;
+            fetch(`/api/employees/${id}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({name: name, email: email, salary: salary, address: address})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                getEmployees();
+            });
+        }
+
+        function deleteEmployee(id) {
+            fetch(`/api/employees/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                getEmployees();
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            getEmployees();
+
+            document.getElementById('addEmployeeForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                addEmployee();
+            });
+
+            document.getElementById('updateEmployeeForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                updateEmployee();
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Employee Management</h1>
+
+    <!-- Form to Add Employee -->
+    <h2>Add Employee</h2>
+    <form id="addEmployeeForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <label for="salary">Salary:</label>
+        <input type="number" id="salary" name="salary" required>
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <!-- Form to Update Employee -->
+    <h2>Update Employee</h2>
+    <form id="updateEmployeeForm">
+        <input type="hidden" id="updateId">
+        <label for="updateName">Name:</label>
+        <input type="text" id="updateName" name="name" required>
+        <label for="updateEmail">Email:</label>
+        <input type="email" id="updateEmail" name="email" required>
+        <label for="updateSalary">Salary:</label>
+        <input type="number" id="updateSalary" name="salary" required>
+        <label for="updateAddress">Address:</label>
+        <input type="text" id="updateAddress" name="address" required>
+        <button type="submit">Update</button>
+    </form>
+
+    <!-- Table to Display Employees -->
+    <h2>Employee List</h2>
+    <table id="employeeTable"></table>
+</body>
+</html>
